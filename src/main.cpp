@@ -1,58 +1,54 @@
-#include <Arduino.h>
-#include <Nodemcu.h>
-#include <Response.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
+/**
+ * @author Leonardo Menezes
+ * @email leonardosmenezes.ssz@gmail.com
+ * @create date 2020-10-12 00:03:58
+ * @modify date 2020-10-12 00:03:58
+ */
 
-Nodemcu nodemcu(115200);
+#include <Nodemcu.h>
+#include <Constants.h>
+#include <ESP8266WebServer.h>
+#include <Validator.h>
+
+Nodemcu nodemcu(115200, D1, D2, D3);
 ESP8266WebServer server(80);
 
  
  void handlerLigthsRequests(){
     String parameterName = server.argName(0);
     String parameterValue = server.arg(parameterName);
-    std::map <String, String> nodemcuEvaluatedParams = nodemcu.evaluateParams(parameterName, parameterValue);
 
-    if (nodemcuEvaluatedParams.at("status").equals("200")){
-      nodemcu.changeLigthPower(parameterName, parameterValue);
+    if (!isAValidLigthKey(parameterName, nodemcu.lights)){
+      server.send(400, JSON, INVALID_LIGHT);
+      return;
     }
 
-    Response resp = Response(nodemcuEvaluatedParams);
-    server.send(resp.statusCode, resp.contentType, resp.body);
+    if (!isAValidTension(parameterValue)){
+      server.send(400, JSON, INVALID_TENSION);
+      return;
+    }
+
+    nodemcu.changeLigthPower(parameterName, parameterValue);
+    server.send(200, JSON, SUCCESS);
   }
 
   void handlerNotFound(){
-    Response resp = notFoundResponse();
-    server.send(resp.statusCode, resp.contentType, resp.body);
+    server.send(404, JSON, NOT_FOUND);
   }
 
 
 void setup() {
 
-  nodemcu.configureAllLigthsPinModeAsOutput();
-
-  nodemcu.print("====== Starting connection =======");
-
-  WiFi.begin("********", "*********");
-
-  String connMessage = "connecting";
-
-  while (WiFi.status() != WL_CONNECTED){
-    delay(500);
-    nodemcu.print(connMessage += ".");
-  }
-
-  nodemcu.print("====== Connected! ========");
-  nodemcu.print(WiFi.localIP().toString());
+  nodemcu.initTrafficLigths();
+  nodemcu.wifiBegin("**************", "*************");
+  nodemcu.showIP();
 
   server.on("/lights", handlerLigthsRequests);
   server.onNotFound(handlerNotFound);
   server.begin();
-  
 }
 
 void loop() {
   server.handleClient();
 }
-
 

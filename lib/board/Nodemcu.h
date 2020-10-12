@@ -1,24 +1,30 @@
+/**
+ * @author Leonardo Menezes
+ * @email leonardosmenezes.ssz@gmail.com
+ * @create date 2020-10-12 00:02:35
+ * @modify date 2020-10-12 00:02:35
+ */
+
+
 #include <map>
+#include <ESP8266WiFi.h>
+using namespace std;
 
-
-std::map<String, int> lights = {
-    {"green", D1},
-    {"yellow", D3},
-    {"red", D2}
-  };
-
-
-const String INVALID_TENSION_MSG = "Invalid tension, please choose 1 to turn on and 0 to turn off the ligth.";
-const String INVALID_LIGHT_KEY_MSG = "Invalid ligth parameter, please send green, red or yellow.";
 
 class Nodemcu{
 
     public:
-        Nodemcu(int baud){
+        std::map<String, int> lights; 
+
+    public:
+        Nodemcu(int baud, int green, int red, int yellow){
         Serial.begin(baud);   
+        lights.insert(pair<String, int> ("green", green));
+        lights.insert(pair<String, int> ("red", red));
+        lights.insert(pair<String, int> ("yellow", yellow));
     }
 
-    void configureAllLigthsPinModeAsOutput(){
+    void initTrafficLigths(){
         std::map<String, int> :: iterator it; 
 
         for ( it = lights.begin(); it != lights.end(); it ++){
@@ -34,34 +40,21 @@ class Nodemcu{
         Serial.println(msg);
     }
 
-    bool isAValidLigthKey(String parameter){
-        std::map<String, int>::iterator it = lights.find(parameter);
 
-        if (it == lights.end()){
-            return false;
+    void wifiBegin(String ssid, String password){
+         WiFi.begin(ssid, password);
+
+        String connMessage = "connecting";
+
+        while (WiFi.status() != WL_CONNECTED){
+            delay(500);
+            print(connMessage += ".");
         }
-
-        return true;
-    } 
-
-  bool isAValidTension(String tension){
-        if (tension == "0" || tension == "1"){
-            return true;
-        }
-        return false;
-    }     
- 
-
-    std::map<String, String> evaluateParams(String litghName, String lightTension){
-        if (!isAValidLigthKey(litghName)){
-            return {{"status", "400"}, {"message", INVALID_LIGHT_KEY_MSG}};
-        } else if (!isAValidTension(lightTension)){
-            return {{"status","400"}, {"message", INVALID_TENSION_MSG}};
-        }else{
-            return {{"status", "200"}, {"message", "The ligth " + litghName + " has changed power to " + lightTension}};
     }
-} 
 
+    void showIP(){
+        print(WiFi.localIP().toString());
+    }
 };
 
 
