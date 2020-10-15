@@ -10,7 +10,7 @@
 #include <ESP8266WebServer.h>
 #include <Validator.h>
 
-Nodemcu nodemcu(115200, D1, D2, D3);
+Nodemcu nodemcu(115200, D1, D3, D2);
 ESP8266WebServer server(80);
 
  
@@ -40,7 +40,7 @@ ESP8266WebServer server(80);
 void setup() {
 
   nodemcu.initTrafficLigths();
-  nodemcu.wifiBegin("**************", "*************");
+  nodemcu.wifiBegin("*************", "*************");
   nodemcu.showIP();
 
   server.on("/lights", handlerLigthsRequests);
